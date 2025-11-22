@@ -439,7 +439,7 @@
 <body>
   <div class="container">
     <h1>Two-Step Equations Practice</h1>
-    <div class="subheading">Solve for x, y, or z. Free input, three difficulty levels, and worksheet generator.</div>
+    <div class="subheading">Solve for x, y, or k. Free input, three difficulty levels, and worksheet generator.</div>
 
     <div class="top-bar" aria-label="Main controls">
       <div class="mode-toggle" role="radiogroup" aria-label="Mode">
@@ -688,7 +688,6 @@
 
     function formatTermCoeffVar(a, variable, omitSignForPositive) {
       const absA = Math.abs(a);
-      const sign = a < 0 ? "-" : "+";
       let coeffStr = "";
       if (absA === 1) {
         coeffStr = "";
@@ -717,16 +716,16 @@
     // A generated question object:
     // {
     //   html: "<span>...</span>",
-    //   variable: "x" | "y" | "z",
+    //   variable: "x" | "y" | "k",
     //   solution: number,
     //   stepsHtml: "<div>step</div>...",
     //   raw: { any debug info }
     // }
 
-    // ----------- EASY: now always ax + b = c or x/n + b = c with c > 0 -----------
+    // ----------- EASY: ax + b = c or x/n + b = c with c > 0 -----------
 
     function generateEasyQuestion() {
-      const variable = randomChoice(["x", "y", "z"]);
+      const variable = randomChoice(["x", "y", "k"]);
       const pattern = Math.random() < 0.5 ? "integer" : "fraction";
 
       if (pattern === "integer") {
@@ -816,7 +815,7 @@
     // ----------- MEDIUM -----------
 
     function generateMediumQuestion() {
-      const variable = randomChoice(["x", "y", "z"]);
+      const variable = randomChoice(["x", "y", "k"]);
       const pattern = Math.random() < 0.6 ? "like-terms" : "fraction";
 
       if (pattern === "like-terms") {
@@ -920,7 +919,7 @@
     // ----------- HARD -----------
 
     function generateHardQuestion() {
-      const variable = randomChoice(["x", "y", "z"]);
+      const variable = randomChoice(["x", "y", "k"]);
       const patternRand = Math.random();
       let pattern;
       if (patternRand < 0.4) pattern = "multi-like-terms";
@@ -1047,16 +1046,16 @@
         }
 
       } else {
-        const k = randomChoice([0.02, 0.03, 0.04, 0.05]);
+        const kVal = randomChoice([0.02, 0.03, 0.04, 0.05]);
         const sol = randomSolutionInteger();
         const constPart = randomChoice([0.4, 0.6, 0.8, 1.0]);
-        let leftVal = constPart + k * sol;
+        let leftVal = constPart + kVal * sol;
         leftVal = Math.round(leftVal * 10) / 10;
         if (Math.abs(leftVal) > 200) return generateHardQuestion();
 
         const leftFirst = Math.random() < 0.5;
         const leftExpr = formatNumber(leftVal, true);
-        const rightExpr = formatNumber(constPart, true) + " + " + formatNumber(k, true) + formatVariable(variable);
+        const rightExpr = formatNumber(constPart, true) + " + " + formatNumber(kVal, true) + formatVariable(variable);
 
         const eqHtml = leftFirst
           ? leftExpr + " = " + rightExpr
@@ -1066,14 +1065,14 @@
         steps.push(eqHtml);
 
         const step1 =
-          leftExpr + " - " + formatNumber(constPart, true) + " = " + formatNumber(k, true) + formatVariable(variable);
+          leftExpr + " - " + formatNumber(constPart, true) + " = " + formatNumber(kVal, true) + formatVariable(variable);
 
         const diff = leftVal - constPart;
         const diffNice = Math.round(diff * 10) / 10;
 
         steps.push(step1);
-        steps.push(formatNumber(diffNice, true) + " = " + formatNumber(k, true) + formatVariable(variable));
-        steps.push(variable + " = " + formatNumber(diffNice, true) + " / " + formatNumber(k, true));
+        steps.push(formatNumber(diffNice, true) + " = " + formatNumber(kVal, true) + formatVariable(variable));
+        steps.push(variable + " = " + formatNumber(diffNice, true) + " / " + formatNumber(kVal, true));
         steps.push(variable + " = " + formatNumber(sol, true));
 
         return {
@@ -1081,7 +1080,7 @@
           variable,
           solution: sol,
           stepsHtml: steps.join("<br>"),
-          raw: { k, constPart, leftVal, pattern: "hard-decimal-coeff" }
+          raw: { kVal, constPart, leftVal, pattern: "hard-decimal-coeff" }
         };
       }
     }
@@ -1105,7 +1104,7 @@
 
     let soundEnabled = true;
 
-    const equationDisplay = document.getElementById("equation-display");
+    const equationDisplayEl = document.getElementById("equation-display");
     const answerInput = document.getElementById("answer-input");
     const submitBtn = document.getElementById("submit-btn");
     const nextBtn = document.getElementById("next-btn");
@@ -1252,7 +1251,7 @@
 
     function generateNewQuestion() {
       currentQuestion = generateQuestionByDifficulty(currentDifficulty);
-      equationDisplay.innerHTML = currentQuestion.html;
+      equationDisplayEl.innerHTML = currentQuestion.html;
       answerLabel.textContent = "Solve for " + currentQuestion.variable + ":";
       answerInput.value = "";
       answerInput.disabled = false;
