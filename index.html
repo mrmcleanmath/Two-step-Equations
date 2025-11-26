@@ -253,10 +253,6 @@
       color: var(--incorrect);
     }
 
-    .feedback-icon {
-      font-size: 1.4rem;
-    }
-
     .steps {
       margin-top: 8px;
       padding: 8px;
@@ -319,8 +315,6 @@
       opacity: 0.8;
     }
 
-    /* Worksheet mode */
-
     .mode-header {
       display: flex;
       justify-content: space-between;
@@ -372,7 +366,7 @@
     }
 
     .worksheet-question {
-      margin-bottom: 16px; /* increased spacing between worksheet questions */
+      margin-bottom: 16px;
     }
 
     .answer-key-item {
@@ -387,8 +381,6 @@
       background: var(--bg-alt);
       font-size: 0.8rem;
     }
-
-    /* Dev panel */
 
     .dev-panel {
       margin-top: 16px;
@@ -421,8 +413,6 @@
       white-space: pre-wrap;
     }
 
-    /* Accessibility */
-
     .sr-only {
       position: absolute;
       width: 1px;
@@ -433,7 +423,6 @@
       clip: rect(0,0,0,0);
       border: 0;
     }
-
   </style>
 </head>
 <body>
@@ -588,7 +577,7 @@
   </div>
 
   <script>
-    // ----------- Utility: number formatting (spaces for thousands, dot for decimal) -----------
+    // ----------- Number formatting -----------
 
     function formatNumber(num, decimalsAllowed) {
       const negative = num < 0;
@@ -596,7 +585,6 @@
 
       let useDecimals = false;
       if (decimalsAllowed) {
-        // keep up to one decimal place if needed
         value = Math.round(value * 10) / 10;
         if (Math.abs(value - Math.round(value)) > 1e-9) {
           useDecimals = true;
@@ -608,11 +596,10 @@
       let intPart = useDecimals ? Math.floor(value).toString() : Math.round(value).toString();
       let decPart = "";
       if (useDecimals) {
-        const raw = value.toFixed(1); // ensures one decimal
+        const raw = value.toFixed(1);
         decPart = raw.split(".")[1] || "";
       }
 
-      // add spaces for thousands
       let resultInt = "";
       for (let i = 0; i < intPart.length; i++) {
         const posFromRight = intPart.length - i - 1;
@@ -631,9 +618,37 @@
       return finalStr;
     }
 
-    // ----------- Simple beep with Web Audio API -----------
+    // ----------- Helpers to avoid multiplying/dividing negatives in steps -----------
+
+    function formatDivisionStep(variable, numerator, denominator, decimalsAllowed) {
+      // show division with positive operands only; minus sign out front if needed
+      const absNum = Math.abs(numerator);
+      const numStr = formatNumber(absNum, decimalsAllowed);
+      const denStr = formatNumber(Math.abs(denominator), decimalsAllowed);
+      if (numerator < 0) {
+        return variable + " = -" + numStr + " / " + denStr;
+      } else {
+        return variable + " = " + numStr + " / " + denStr;
+      }
+    }
+
+    function formatMultiplicationStep(variable, factor, multiplier, decimalsAllowed) {
+      // show multiplication with positive operands only; minus sign out front if needed
+      const absFactor = Math.abs(factor);
+      const factorStr = formatNumber(absFactor, decimalsAllowed);
+      const multStr = formatNumber(Math.abs(multiplier), decimalsAllowed);
+      if (factor < 0) {
+        return variable + " = -" + factorStr + " × " + multStr;
+      } else {
+        return variable + " = " + factorStr + " × " + multStr;
+      }
+    }
+
+    // ----------- Simple beep -----------
 
     let audioContext = null;
+    let soundEnabled = true;
+
     function playBeep(frequency) {
       if (!soundEnabled) return;
       try {
@@ -651,12 +666,10 @@
         gain.connect(audioContext.destination);
         osc.start();
         osc.stop(audioContext.currentTime + duration);
-      } catch (e) {
-        // ignore audio errors
-      }
+      } catch (e) {}
     }
 
-    // ----------- Equation generation helpers -----------
+    // ----------- Random helpers -----------
 
     function randomChoice(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
@@ -666,13 +679,13 @@
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    // **Positive-only solutions**
     function randomSolutionInteger() {
-      return randomInt(-20, 20);
+      return randomInt(1, 20); // 1..20, no negatives, no zero
     }
 
     function randomSolutionDecimal() {
-      // choose something like -10.0 .. 10.0 step 0.1
-      const base = randomInt(-100, 100);
+      const base = randomInt(1, 100); // 0.1 .. 10.0, positive
       return base / 10;
     }
 
@@ -681,7 +694,6 @@
         '</span><span class="denominator">' + denominatorHTML + "</span></span>";
     }
 
-    // coefficient * variable formatting
     function formatVariable(variable) {
       return variable;
     }
@@ -713,16 +725,7 @@
       }
     }
 
-    // A generated question object:
-    // {
-    //   html: "<span>...</span>",
-    //   variable: "x" | "y" | "k",
-    //   solution: number,
-    //   stepsHtml: "<div>step</div>...",
-    //   raw: { any debug info }
-    // }
-
-    // ----------- EASY: ax + b = c or x/n + b = c with c > 0 -----------
+    // ----------- EASY -----------
 
     function generateEasyQuestion() {
       const variable = randomChoice(["x", "y", "k"]);
@@ -730,12 +733,11 @@
 
       if (pattern === "integer") {
         while (true) {
-          const a = randomInt(1, 10);
-          const sol = randomSolutionInteger();
-          const b = randomInt(-40, 40);
+          const a = randomInt(1, 10);          // positive coefficient
+          const sol = randomSolutionInteger(); // positive solution
+          const b = randomInt(-40, 40);        // constant can be negative
           const c = a * sol + b;
 
-          // Require positive RHS and not too big
           if (c <= 0 || Math.abs(c) > 120) continue;
 
           const termVar = formatTermCoeffVar(a, variable);
@@ -746,11 +748,12 @@
 
           const steps = [];
           steps.push(eqHtml);
-          const step2Right = c - b;
-          const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false) : " + " + formatNumber(Math.abs(b), false);
+          const step2Right = c - b; // = a * sol > 0
+          const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false)
+                               : " + " + formatNumber(Math.abs(b), false);
           steps.push(formatTermCoeffVar(a, variable) + " = " + formatNumber(c, false) + signB);
           steps.push(formatTermCoeffVar(a, variable) + " = " + formatNumber(step2Right, false));
-          steps.push(variable + " = " + formatNumber(step2Right, false) + " / " + a);
+          steps.push(formatDivisionStep(variable, step2Right, a, false));
           steps.push(variable + " = " + formatNumber(sol, false));
 
           return {
@@ -763,18 +766,12 @@
         }
       } else {
         while (true) {
-          const n = randomChoice([2, 4, 5, 10]);
-          let sol;
-          while (true) {
-            const k = randomInt(-20, 20);
-            if (k === 0) continue;
-            sol = k * n;
-            break;
-          }
+          const n = randomChoice([2, 4, 5, 10]); // positive
+          const k = randomInt(1, 20);           // positive
+          const sol = k * n;                    // positive solution
           const b = randomInt(-30, 30);
           const c = sol / n + b;
 
-          // RHS must be positive integer and not too big
           if (c <= 0 || Math.abs(c) > 120) continue;
           if (Math.abs(c - Math.round(c)) > 1e-9) continue;
           const cInt = Math.round(c);
@@ -788,8 +785,9 @@
           const steps = [];
           steps.push(eqHtml);
 
-          const cMinusB = cInt - b;
-          const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false) : " + " + formatNumber(Math.abs(b), false);
+          const cMinusB = cInt - b; // = sol/n > 0
+          const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false)
+                               : " + " + formatNumber(Math.abs(b), false);
           steps.push(
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(cInt, false) + signB
@@ -798,7 +796,7 @@
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(cMinusB, false)
           );
-          steps.push(variable + " = " + formatNumber(cMinusB, false) + " × " + n);
+          steps.push(formatMultiplicationStep(variable, cMinusB, n, false));
           steps.push(variable + " = " + formatNumber(sol, false));
 
           return {
@@ -819,18 +817,19 @@
       const pattern = Math.random() < 0.6 ? "like-terms" : "fraction";
 
       if (pattern === "like-terms") {
-        const sol = randomSolutionInteger();
-        let a1 = randomInt(1, 6);
-        let a2 = randomInt(1, 6);
-        let signSecond = Math.random() < 0.5 ? 1 : -1;
+        const sol = randomSolutionInteger(); // positive
+        let a1, a2, signSecond, combined;
 
-        let combined = a1 + signSecond * a2;
-        if (combined === 0) {
-          return generateMediumQuestion();
-        }
+        // ensure combined coefficient is positive (so division is by positive)
+        do {
+          a1 = randomInt(1, 6);
+          a2 = randomInt(1, 6);
+          signSecond = Math.random() < 0.5 ? 1 : -1;
+          combined = a1 + signSecond * a2;
+        } while (combined <= 0);
 
         let b = randomInt(-30, 30);
-        let c = combined * sol + b;
+        let c = combined * sol + b; // RHS
         if (Math.abs(c) > 120) {
           return generateMediumQuestion();
         }
@@ -850,11 +849,12 @@
         const combinedTerm = formatTermCoeffVar(combined, variable);
         steps.push(combinedTerm + " " + formatSignedConst(b) + " = " + formatNumber(c, false));
 
-        const cMinusB = c - b;
-        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false) : " + " + formatNumber(Math.abs(b), false);
+        const cMinusB = c - b; // = combined * sol > 0
+        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false)
+                             : " + " + formatNumber(Math.abs(b), false);
         steps.push(combinedTerm + " = " + formatNumber(c, false) + signB);
         steps.push(combinedTerm + " = " + formatNumber(cMinusB, false));
-        steps.push(variable + " = " + formatNumber(cMinusB, false) + " / " + combined);
+        steps.push(formatDivisionStep(variable, cMinusB, combined, false));
         steps.push(variable + " = " + formatNumber(sol, false));
 
         return {
@@ -867,13 +867,8 @@
 
       } else {
         const n = randomChoice([2, 4, 5, 10]);
-        let sol;
-        while (true) {
-          const k = randomInt(-24, 24);
-          if (k === 0) continue;
-          sol = k * n;
-          break;
-        }
+        const k = randomInt(1, 24);  // positive
+        const sol = k * n;           // positive
         const b = randomInt(-40, 40);
         const c = sol / n + b;
         if (Math.abs(c) > 140) {
@@ -893,8 +888,9 @@
         const steps = [];
         steps.push(eqHtml);
 
-        const cMinusB = cInt - b;
-        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false) : " + " + formatNumber(Math.abs(b), false);
+        const cMinusB = cInt - b; // = sol/n > 0
+        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), false)
+                             : " + " + formatNumber(Math.abs(b), false);
         steps.push(
           wrapWithFractionHTML(variable, n.toString()) +
           " = " + formatNumber(cInt, false) + signB
@@ -903,7 +899,7 @@
           wrapWithFractionHTML(variable, n.toString()) +
           " = " + formatNumber(cMinusB, false)
         );
-        steps.push(variable + " = " + formatNumber(cMinusB, false) + " × " + n);
+        steps.push(formatMultiplicationStep(variable, cMinusB, n, false));
         steps.push(variable + " = " + formatNumber(sol, false));
 
         return {
@@ -927,11 +923,11 @@
       else pattern = "decimal-coeff";
 
       if (pattern === "multi-like-terms") {
-        const sol = Math.random() < 0.5 ? randomSolutionInteger() : randomSolutionDecimal();
+        const sol = Math.random() < 0.5 ? randomSolutionInteger() : randomSolutionDecimal(); // positive
         let a1 = randomInt(1, 4);
         let a2 = randomInt(1, 4);
         let a3 = randomInt(1, 4);
-        const sumA = a1 + a2 + a3;
+        const sumA = a1 + a2 + a3; // positive
 
         let b = randomInt(-40, 40);
         let c = sumA * sol + b;
@@ -957,11 +953,12 @@
         const combinedTerm = formatTermCoeffVar(sumA, variable);
         steps.push(combinedTerm + " " + formatSignedConst(b) + " = " + formatNumber(c, true));
 
-        const cMinusB = c - b;
-        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), true) : " + " + formatNumber(Math.abs(b), true);
+        const cMinusB = c - b; // = sumA * sol > 0
+        const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), true)
+                             : " + " + formatNumber(Math.abs(b), true);
         steps.push(combinedTerm + " = " + formatNumber(c, true) + signB);
         steps.push(combinedTerm + " = " + formatNumber(cMinusB, true));
-        steps.push(variable + " = " + formatNumber(cMinusB, true) + " / " + sumA);
+        steps.push(formatDivisionStep(variable, cMinusB, sumA, true));
         steps.push(variable + " = " + formatNumber(sol, true));
 
         return {
@@ -974,10 +971,10 @@
 
       } else if (pattern === "fraction-decimal") {
         const n = 10;
-        const sol = randomSolutionDecimal();
+        const sol = randomSolutionDecimal(); // positive
         const d = randomChoice([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.2, 1.5, 2.7]);
         let leftMinus = Math.random() < 0.5;
-        const fracValue = sol / n;
+        const fracValue = sol / n; // positive
 
         if (leftMinus) {
           const c = fracValue - d;
@@ -990,7 +987,7 @@
 
           const steps = [];
           steps.push(eqHtml);
-          const rightPlus = cNice + d;
+          const rightPlus = cNice + d; // = fracValue > 0
           steps.push(
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(cNice, true) + " + " + formatNumber(d, true)
@@ -999,9 +996,9 @@
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(rightPlus, true)
           );
-          const vVal = rightPlus * n;
+          const vVal = rightPlus * n; // positive
           const solRounded = Math.round(vVal * 10) / 10;
-          steps.push(variable + " = " + formatNumber(rightPlus, true) + " × " + n);
+          steps.push(formatMultiplicationStep(variable, rightPlus, n, true));
           steps.push(variable + " = " + formatNumber(solRounded, true));
 
           return {
@@ -1022,7 +1019,7 @@
 
           const steps = [];
           steps.push(eqHtml);
-          const rightMinus = cNice - d;
+          const rightMinus = cNice - d; // = fracValue > 0
           steps.push(
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(cNice, true) + " - " + formatNumber(d, true)
@@ -1031,9 +1028,9 @@
             wrapWithFractionHTML(variable, n.toString()) +
             " = " + formatNumber(rightMinus, true)
           );
-          const vVal = rightMinus * n;
+          const vVal = rightMinus * n; // positive
           const solRounded = Math.round(vVal * 10) / 10;
-          steps.push(variable + " = " + formatNumber(rightMinus, true) + " × " + n);
+          steps.push(formatMultiplicationStep(variable, rightMinus, n, true));
           steps.push(variable + " = " + formatNumber(solRounded, true));
 
           return {
@@ -1046,10 +1043,10 @@
         }
 
       } else {
-        const kVal = randomChoice([0.02, 0.03, 0.04, 0.05]);
-        const sol = randomSolutionInteger();
-        const constPart = randomChoice([0.4, 0.6, 0.8, 1.0]);
-        let leftVal = constPart + kVal * sol;
+        const kVal = randomChoice([0.02, 0.03, 0.04, 0.05]); // positive
+        const sol = randomSolutionInteger(); // positive
+        const constPart = randomChoice([0.4, 0.6, 0.8, 1.0]); // positive
+        let leftVal = constPart + kVal * sol; // positive
         leftVal = Math.round(leftVal * 10) / 10;
         if (Math.abs(leftVal) > 200) return generateHardQuestion();
 
@@ -1067,12 +1064,12 @@
         const step1 =
           leftExpr + " - " + formatNumber(constPart, true) + " = " + formatNumber(kVal, true) + formatVariable(variable);
 
-        const diff = leftVal - constPart;
+        const diff = leftVal - constPart;          // = kVal * sol > 0
         const diffNice = Math.round(diff * 10) / 10;
 
         steps.push(step1);
         steps.push(formatNumber(diffNice, true) + " = " + formatNumber(kVal, true) + formatVariable(variable));
-        steps.push(variable + " = " + formatNumber(diffNice, true) + " / " + formatNumber(kVal, true));
+        steps.push(formatDivisionStep(variable, diffNice, kVal, true));
         steps.push(variable + " = " + formatNumber(sol, true));
 
         return {
@@ -1085,7 +1082,7 @@
       }
     }
 
-    // ----------- Game state -----------
+    // ----------- Game state & DOM refs -----------
 
     let currentDifficulty = "easy";
     let currentMode = "game";
@@ -1101,8 +1098,6 @@
     let timerDuration = 30;
     let timerRemaining = 0;
     let timerInterval = null;
-
-    let soundEnabled = true;
 
     const equationDisplayEl = document.getElementById("equation-display");
     const answerInput = document.getElementById("answer-input");
@@ -1144,7 +1139,7 @@
     const devPanel = document.getElementById("dev-panel");
     const devLog = document.getElementById("dev-log");
 
-    // ----------- Mode and difficulty handlers -----------
+    // ----------- Mode / difficulty -----------
 
     document.querySelectorAll(".difficulty-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -1181,7 +1176,7 @@
       });
     });
 
-    // ----------- Timer logic -----------
+    // ----------- Timer -----------
 
     function updateTimerDisplay() {
       if (!timerEnabled) {
@@ -1239,7 +1234,7 @@
       }
     });
 
-    // ----------- Question generation per difficulty -----------
+    // ----------- Question generation / game -----------
 
     function generateQuestionByDifficulty(diff) {
       if (diff === "easy") return generateEasyQuestion();
@@ -1267,8 +1262,6 @@
       }
       answerInput.focus();
     }
-
-    // ----------- Answer checking -----------
 
     function parseUserAnswer(input) {
       const trimmed = input.replace(/\s+/g, "").replace(",", ".");
@@ -1393,7 +1386,7 @@
       }
     });
 
-    // ----------- Worksheet mode logic -----------
+    // ----------- Worksheet mode -----------
 
     function generateWorksheet() {
       const count = parseInt(wsCount.value, 10);
@@ -1456,9 +1449,9 @@
         try {
           const q = generateQuestionByDifficulty(diff);
           const s = q.solution;
-          if (!isFinite(s)) {
+          if (!isFinite(s) || s <= 0) {
             failures++;
-            logDev("Invalid solution in " + diff + ": " + q.html);
+            logDev("Invalid or non-positive solution in " + diff + ": " + q.html);
           } else {
             ok++;
           }
@@ -1478,7 +1471,7 @@
           const q = generateQuestionByDifficulty(diff);
           if (q.solution < 0) negCount++;
         }
-        logDev("Negative solutions in " + diff + ": " + negCount + "/50");
+        logDev("Negative solutions in " + diff + ": " + negCount + "/50 (should be 0).");
       });
     }
 
@@ -1559,7 +1552,7 @@
       if (testName === "random-mix") testRandomMix();
     });
 
-    // ----------- URL param for dev mode -----------
+    // ----------- Dev mode -----------
 
     function initDevMode() {
       const params = new URLSearchParams(window.location.search);
@@ -1569,7 +1562,7 @@
       }
     }
 
-    // ----------- Initial setup -----------
+    // ----------- Init -----------
 
     function init() {
       soundEnabled = soundToggle.checked;
