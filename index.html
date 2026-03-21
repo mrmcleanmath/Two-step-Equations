@@ -628,6 +628,16 @@
       return finalStr;
     }
 
+    // ----------- Precision helpers -----------
+
+    function roundTo1(num) {
+      return Math.round(num * 10) / 10;
+    }
+
+    function isOneDecimalExact(num) {
+      return Math.abs(num * 10 - Math.round(num * 10)) < 1e-9;
+    }
+
     // ----------- Helpers to avoid multiplying/dividing negatives in steps -----------
 
     function formatDivisionStep(variable, numerator, denominator, decimalsAllowed) {
@@ -813,10 +823,13 @@
           const a = randomChoice([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.2, 1.5, 2.5]);
           const sol = randomSolutionDecimal();
           const b = randomChoice([-4.5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5]);
-          let c = a * sol + b;
-          c = Math.round(c * 10) / 10;
 
-          if (c <= 0 || Math.abs(c) > 150) continue;
+          const cExact = a * sol + b;
+
+          if (!isOneDecimalExact(cExact)) continue;
+          if (cExact <= 0 || Math.abs(cExact) > 150) continue;
+
+          const c = roundTo1(cExact);
 
           const coeffStr = formatNumber(a, true);
           const leftExpr = coeffStr + formatVariable(variable) + " " + (b >= 0 ? "+ " + formatNumber(b, true) : "- " + formatNumber(Math.abs(b), true));
@@ -825,7 +838,7 @@
 
           const steps = [];
           steps.push(eqHtml);
-          const step2Right = Math.round((c - b) * 10) / 10;
+          const step2Right = roundTo1(c - b);
           const signB = b >= 0 ? " - " + formatNumber(Math.abs(b), true)
                                : " + " + formatNumber(Math.abs(b), true);
           steps.push(coeffStr + formatVariable(variable) + " = " + formatNumber(c, true) + signB);
@@ -950,9 +963,11 @@
           const fracValue = sol / n;
 
           if (leftMinus) {
-            const c = fracValue - d;
-            if (Math.abs(c) > 200) continue;
-            const cNice = Math.round(c * 10) / 10;
+            const cExact = fracValue - d;
+            if (!isOneDecimalExact(cExact)) continue;
+            if (Math.abs(cExact) > 200) continue;
+
+            const cNice = roundTo1(cExact);
             const frac = wrapWithFractionHTML(variable, n.toString());
             const leftExpr = frac + " - " + formatNumber(d, true);
             const rightExpr = formatNumber(cNice, true);
@@ -960,7 +975,7 @@
 
             const steps = [];
             steps.push(eqHtml);
-            const rightPlus = Math.round((cNice + d) * 10) / 10;
+            const rightPlus = roundTo1(cNice + d);
             steps.push(
               wrapWithFractionHTML(variable, n.toString()) +
               " = " + formatNumber(cNice, true) + " + " + formatNumber(d, true)
@@ -969,7 +984,7 @@
               wrapWithFractionHTML(variable, n.toString()) +
               " = " + formatNumber(rightPlus, true)
             );
-            const vVal = Math.round((rightPlus * n) * 10) / 10;
+            const vVal = roundTo1(rightPlus * n);
             steps.push(formatMultiplicationStep(variable, rightPlus, n, true));
             steps.push(variable + " = " + formatNumber(vVal, true));
 
@@ -981,9 +996,11 @@
               raw: { n, d, cNice, pattern: "hard-fraction-minus" }
             };
           } else {
-            const c = fracValue + d;
-            if (Math.abs(c) > 200) continue;
-            const cNice = Math.round(c * 10) / 10;
+            const cExact = fracValue + d;
+            if (!isOneDecimalExact(cExact)) continue;
+            if (Math.abs(cExact) > 200) continue;
+
+            const cNice = roundTo1(cExact);
             const frac = wrapWithFractionHTML(variable, n.toString());
             const leftExpr = frac + " + " + formatNumber(d, true);
             const rightExpr = formatNumber(cNice, true);
@@ -991,7 +1008,7 @@
 
             const steps = [];
             steps.push(eqHtml);
-            const rightMinus = Math.round((cNice - d) * 10) / 10;
+            const rightMinus = roundTo1(cNice - d);
             steps.push(
               wrapWithFractionHTML(variable, n.toString()) +
               " = " + formatNumber(cNice, true) + " - " + formatNumber(d, true)
@@ -1000,7 +1017,7 @@
               wrapWithFractionHTML(variable, n.toString()) +
               " = " + formatNumber(rightMinus, true)
             );
-            const vVal = Math.round((rightMinus * n) * 10) / 10;
+            const vVal = roundTo1(rightMinus * n);
             steps.push(formatMultiplicationStep(variable, rightMinus, n, true));
             steps.push(variable + " = " + formatNumber(vVal, true));
 
