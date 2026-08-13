@@ -1,18 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Equations with Variables on Both Sides — Mr. McLean Math</title>
+<title>Two-Step Equations Practice — Mr. McLean Math</title>
 <style>
-:root{--bg:#f5f6f8;--panel:#fff;--text:#202124;--muted:#666b73;--border:#d9dde3;--accent:#1976d2;--accent-soft:#e8f1fb;--good:#247a3b;--bad:#b3261e;--focus:#f5b400}
+:root{
+  --bg:#f5f6f8;--panel:#fff;--text:#202124;--muted:#666b73;--border:#d9dde3;
+  --accent:#1976d2;--accent-soft:#e8f1fb;--good:#247a3b;--bad:#b3261e;--focus:#f5b400;
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
-body.high-contrast{--bg:#000;--panel:#090909;--text:#fff;--muted:#ddd;--border:#777;--accent:#00d7ff;--accent-soft:#111;--good:#68ff8b;--bad:#ff7474;--focus:#ffea00}
+body.high-contrast{
+  --bg:#000;--panel:#090909;--text:#fff;--muted:#ddd;--border:#777;
+  --accent:#00d7ff;--accent-soft:#111;--good:#68ff8b;--bad:#ff7474;--focus:#ffea00;
+}
 .app{max-width:920px;margin:0 auto;padding:18px}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:clamp(28px,5vw,36px)}
-.mode-buttons,.toolbar,.difficulty,.ws-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mode-buttons,.toolbar,.difficulty,.eqtype,.ws-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .toolbar{justify-content:space-between;margin-bottom:14px}
 button,select,input{font:inherit}
 button,select{border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--text);padding:9px 13px}
@@ -23,12 +30,15 @@ button[aria-pressed="true"],button.primary{background:var(--accent);color:#fff;b
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px}
 .practice{display:grid;gap:15px}
 .equation{font-size:clamp(28px,5vw,38px);font-weight:800;text-align:center;padding:20px 10px;background:var(--accent-soft);border-radius:13px;word-break:break-word}
+.fraction{display:inline-block;text-align:center;vertical-align:middle;margin:0 2px}
+.fraction .numerator{display:block;padding:0 3px}
+.fraction .denominator{display:block;padding:0 3px;border-top:2px solid currentColor}
 .note{text-align:center;color:var(--muted);font-size:14px}
 .answer-row{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
 input[type="text"]{width:min(260px,100%);font-size:21px;text-align:center;padding:10px 11px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text)}
 .feedback{min-height:28px;text-align:center;font-size:18px;font-weight:700}
 .feedback.correct{color:var(--good)}.feedback.incorrect{color:var(--bad)}
-.steps{max-width:700px;width:100%;margin:0 auto;background:var(--accent-soft);border:1px solid var(--border);border-radius:11px;padding:11px 13px}
+.steps{max-width:680px;width:100%;margin:0 auto;background:var(--accent-soft);border:1px solid var(--border);border-radius:11px;padding:11px 13px;white-space:normal}
 .steps div{margin:4px 0}
 .stats{display:flex;justify-content:center;gap:20px;color:var(--muted);font-size:15px}
 .worksheet{display:none}
@@ -39,14 +49,21 @@ input[type="text"]{width:min(260px,100%);font-size:21px;text-align:center;paddin
 .ws-answer{display:none;margin-top:7px;color:var(--good);font-weight:700}
 .ws-reveal{margin-top:7px;padding:6px 10px;font-size:14px}
 footer{text-align:center;color:var(--muted);font-size:14px;margin-top:18px}
-@media(max-width:650px){.app{padding:13px}.panel{padding:14px}.answer-row{align-items:stretch}input[type="text"],.answer-row button{width:100%}}
-@media print{header,.toolbar,footer,.ws-controls,.ws-reveal{display:none!important}body{background:#fff;color:#000}.app{max-width:none;padding:0}.panel{border:0;padding:0;background:#fff}.worksheet{display:block!important}.ws-answer{display:none!important}}
+@media(max-width:650px){
+  .app{padding:13px}.panel{padding:14px}.answer-row{align-items:stretch}
+  input[type="text"],.answer-row button{width:100%}
+}
+@media print{
+  header,.toolbar,footer,.ws-controls,.ws-reveal{display:none!important}
+  body{background:#fff;color:#000}.app{max-width:none;padding:0}.panel{border:0;padding:0;background:#fff}
+  .worksheet{display:block!important}.ws-answer{display:none!important}
+}
 </style>
 </head>
 <body>
 <div class="app">
 <header>
-  <h1>Equations with Variables on Both Sides</h1>
+  <h1>Two-Step Equations Practice</h1>
   <div class="mode-buttons" role="group" aria-label="Mode">
     <button id="practiceBtn" aria-pressed="true">Practice</button>
     <button id="worksheetBtn" aria-pressed="false">Worksheet</button>
@@ -54,6 +71,10 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin-top:18px}
 </header>
 
 <div class="toolbar">
+  <div class="eqtype" id="eqtype" role="group" aria-label="Equation type">
+    <button data-type="coefficient" aria-pressed="true">Coefficient + Constant</button>
+    <button data-type="fraction" aria-pressed="false">Fraction Coefficient</button>
+  </div>
   <div class="difficulty" id="difficulty" role="group" aria-label="Difficulty">
     <button data-diff="foundation" aria-pressed="true">Foundation</button>
     <button data-diff="core" aria-pressed="false">Core</button>
@@ -68,7 +89,7 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin-top:18px}
 
   <div class="answer-row">
     <label id="answerLabel" for="answer">Solve for x:</label>
-    <input id="answer" type="text" inputmode="decimal" autocomplete="off">
+    <input id="answer" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer">
     <button id="check" class="primary">Check</button>
     <button id="next" hidden>Next</button>
   </div>
@@ -86,7 +107,9 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin-top:18px}
 <section id="worksheet" class="panel worksheet">
   <div class="ws-controls">
     <label for="wsCount">Questions:</label>
-    <select id="wsCount"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option></select>
+    <select id="wsCount">
+      <option value="5">5</option><option value="10" selected>10</option><option value="15">15</option>
+    </select>
     <button id="generateWs">Generate</button>
     <button id="revealAll">Reveal all</button>
     <button id="hideAll">Hide all</button>
@@ -102,13 +125,14 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin-top:18px}
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
-const state={mode:'practice',difficulty:'foundation',current:null,evaluated:false,correct:0,incorrect:0};
+const state={mode:'practice',difficulty:'foundation',type:'coefficient',current:null,evaluated:false,correct:0,incorrect:0};
 
 function rint(a,b){return Math.floor(Math.random()*(b-a+1))+a}
 function pick(a){return a[rint(0,a.length-1)]}
 function round1(n){return Math.round(n*10)/10}
-function formatNumber(num,dec=false){
-  let v=dec?round1(num):Math.round(num);
+function isOneDecimalExact(n){return Math.abs(n*10-Math.round(n*10))<1e-9}
+function formatNumber(n,allowDecimals=false){
+  let v=allowDecimals?round1(n):Math.round(n);
   if(Math.abs(v)<1e-12)v=0;
   let s=Number.isInteger(v)?String(v):v.toFixed(1);
   let [w,f='']=s.split('.'),neg=w.startsWith('-');
@@ -116,20 +140,14 @@ function formatNumber(num,dec=false){
   w=w.replace(/\B(?=(\d{3})+(?!\d))/g,' ');
   return (neg?'-':'')+w+(f?'.'+f:'');
 }
-function termVar(c,v,dec=false){
-  const a=Math.abs(c),cp=Math.abs(a-1)<1e-9?'':formatNumber(a,dec);
-  return (c<0?'-':'')+cp+v;
+function fracHTML(num,den){return `<span class="fraction"><span class="numerator">${num}</span><span class="denominator">${den}</span></span>`}
+function signedConst(b,allowDecimals=false){
+  if(b===0)return "";
+  return b>0?`+ ${formatNumber(b,allowDecimals)}`:`- ${formatNumber(Math.abs(b),allowDecimals)}`;
 }
-function appendConst(expr,b,dec=false){
-  if(b>0)return expr+' + '+formatNumber(b,dec);
-  if(b<0)return expr+' - '+formatNumber(Math.abs(b),dec);
-  return expr;
-}
-function sideSimple(a,b,v,dec=false){return appendConst(termVar(a,v,dec),b,dec)}
-function sideTwo(a1,a2,b,v,dec=false){
-  let s=termVar(a1,v,dec);
-  s+=' + '+termVar(a2,v,dec);
-  return appendConst(s,b,dec);
+function coeffVar(a,v,allowDecimals=false){
+  const abs=Math.abs(a),c=Math.abs(abs-1)<1e-9?"":formatNumber(abs,allowDecimals);
+  return (a<0?"-":"")+c+v;
 }
 function strictNumber(raw){
   let s=String(raw??'').trim().replace(/\s+/g,'');
@@ -140,69 +158,117 @@ function strictNumber(raw){
   const n=Number(s);return Number.isFinite(n)?n:null;
 }
 
-function buildSteps(html,A,BL,C,BR,v,dec,sol){
-  const amc=A-C,cr=BR-BL;
-  return [
-    html,
-    `${sideSimple(A,BL,v,dec)} = ${sideSimple(C,BR,v,dec)}`,
-    `${sideSimple(amc,BL,v,dec)} = ${formatNumber(BR,dec)}`,
-    `${termVar(amc,v,dec)} = ${formatNumber(cr,dec)}`,
-    `${v} = ${formatNumber(cr,dec)} ÷ ${formatNumber(amc,dec)}`,
-    `${v} = ${formatNumber(sol,dec)}`
-  ];
+function coefficientQuestion(diff){
+  if(diff==='foundation'){
+    while(true){
+      const variable=pick(['x','y','k']),a=rint(1,10),sol=rint(1,20),b=rint(-40,40),c=a*sol+b;
+      if(c<=0||Math.abs(c)>120)continue;
+      const left=coeffVar(a,variable)+' '+signedConst(b);
+      const html=`${left.trim()} = ${formatNumber(c)}`;
+      const step2=c-b;
+      return {variable,solution:sol,html,steps:[
+        html,
+        `${coeffVar(a,variable)} = ${formatNumber(c)} ${b>=0?'-':'+'} ${formatNumber(Math.abs(b))}`,
+        `${coeffVar(a,variable)} = ${formatNumber(step2)}`,
+        `${variable} = ${formatNumber(step2)} ÷ ${formatNumber(a)}`,
+        `${variable} = ${formatNumber(sol)}`
+      ],raw:{a,b,c}};
+    }
+  }
+  if(diff==='core'){
+    while(true){
+      const variable=pick(['x','y','k']),a=rint(2,12),sol=rint(1,20),b=rint(-50,50),c=a*sol+b;
+      if(c<=0||Math.abs(c)>150)continue;
+      const left=coeffVar(a,variable)+' '+signedConst(b);
+      const html=`${left.trim()} = ${formatNumber(c)}`;
+      const step2=c-b;
+      return {variable,solution:sol,html,steps:[
+        html,
+        `${coeffVar(a,variable)} = ${formatNumber(c)} ${b>=0?'-':'+'} ${formatNumber(Math.abs(b))}`,
+        `${coeffVar(a,variable)} = ${formatNumber(step2)}`,
+        `${variable} = ${formatNumber(step2)} ÷ ${formatNumber(a)}`,
+        `${variable} = ${formatNumber(sol)}`
+      ],raw:{a,b,c}};
+    }
+  }
+  while(true){
+    const variable=pick(['x','y','k']);
+    const a=pick([0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.2,1.5,2.5]);
+    const sol=rint(1,100)/10;
+    const b=pick([-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5]);
+    const cExact=a*sol+b;
+    if(!isOneDecimalExact(cExact)||cExact<=0||Math.abs(cExact)>150)continue;
+    const c=round1(cExact),step2=round1(c-b);
+    const html=`${formatNumber(a,true)}${variable} ${signedConst(b,true)} = ${formatNumber(c,true)}`;
+    return {variable,solution:sol,html,steps:[
+      html,
+      `${formatNumber(a,true)}${variable} = ${formatNumber(c,true)} ${b>=0?'-':'+'} ${formatNumber(Math.abs(b),true)}`,
+      `${formatNumber(a,true)}${variable} = ${formatNumber(step2,true)}`,
+      `${variable} = ${formatNumber(step2,true)} ÷ ${formatNumber(a,true)}`,
+      `${variable} = ${formatNumber(sol,true)}`
+    ],raw:{a,b,c}};
+  }
 }
 
-function genFoundation(){
-  const v=pick(['x','y','k']);
+function fractionQuestion(diff){
+  if(diff==='foundation'){
+    while(true){
+      const variable=pick(['x','y','k']),n=pick([2,4,5,10]),k=rint(1,20),sol=k*n,b=rint(-30,30),c=sol/n+b;
+      if(c<=0||Math.abs(c)>120||Math.abs(c-Math.round(c))>1e-9)continue;
+      const ci=Math.round(c),base=fracHTML(variable,String(n)),step=ci-b;
+      const html=`${base} ${signedConst(b)} = ${formatNumber(ci)}`;
+      return {variable,solution:sol,html,steps:[
+        html,
+        `${base} = ${formatNumber(ci)} ${b>=0?'-':'+'} ${formatNumber(Math.abs(b))}`,
+        `${base} = ${formatNumber(step)}`,
+        `${variable} = ${formatNumber(step)} × ${formatNumber(n)}`,
+        `${variable} = ${formatNumber(sol)}`
+      ],raw:{n,b,c:ci}};
+    }
+  }
+  if(diff==='core'){
+    while(true){
+      const variable=pick(['x','y','k']),n=pick([2,4,5,8,10]),k=rint(1,24),sol=k*n,b=rint(-40,40),c=sol/n+b;
+      if(c<=0||Math.abs(c)>140||Math.abs(c-Math.round(c))>1e-9)continue;
+      const ci=Math.round(c),base=fracHTML(variable,String(n)),step=ci-b;
+      const html=`${base} ${signedConst(b)} = ${formatNumber(ci)}`;
+      return {variable,solution:sol,html,steps:[
+        html,
+        `${base} = ${formatNumber(ci)} ${b>=0?'-':'+'} ${formatNumber(Math.abs(b))}`,
+        `${base} = ${formatNumber(step)}`,
+        `${variable} = ${formatNumber(step)} × ${formatNumber(n)}`,
+        `${variable} = ${formatNumber(sol)}`
+      ],raw:{n,b,c:ci}};
+    }
+  }
   while(true){
-    const sol=rint(0,15),a=rint(2,6),c=rint(1,a-1),b=rint(1,20);
-    const d=a*sol+b-c*sol;
-    if(!Number.isFinite(d)||d<=0||d>20)continue;
-    const html=`${sideSimple(a,b,v)} = ${sideSimple(c,d,v)}`;
-    return {variable:v,solution:sol,html,steps:buildSteps(html,a,b,c,d,v,false,sol),raw:{a,b,c,d}};
+    const variable=pick(['x','y','k']),n=10,seed=rint(1,100)/10;
+    const d=pick([0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.2,1.5,2.7]);
+    const minus=Math.random()<.5,fracVal=seed/n;
+    const cExact=minus?fracVal-d:fracVal+d;
+    if(!isOneDecimalExact(cExact)||Math.abs(cExact)>200)continue;
+    const c=round1(cExact),base=fracHTML(variable,String(n));
+    const right=round1(minus?c+d:c-d);
+    const sol=round1(right*n);
+    const html=`${base} ${minus?'-':'+'} ${formatNumber(d,true)} = ${formatNumber(c,true)}`;
+    return {variable,solution:sol,html,steps:[
+      html,
+      `${base} = ${formatNumber(c,true)} ${minus?'+':'-'} ${formatNumber(d,true)}`,
+      `${base} = ${formatNumber(right,true)}`,
+      `${variable} = ${formatNumber(right,true)} × ${formatNumber(n)}`,
+      `${variable} = ${formatNumber(sol,true)}`
+    ],raw:{n,d,c,minus}};
   }
 }
-function genCore(){
-  const v=pick(['x','y','k']);
-  while(true){
-    const sol=rint(0,15),both=Math.random()<.60;
-    const A=both?rint(3,8):rint(2,8);
-    const C=both?rint(2,A-1):rint(1,A-1);
-    const BL=rint(-20,20),BR=A*sol+BL-C*sol;
-    if(!Number.isFinite(BR)||Math.abs(BR)>20)continue;
-    const a1=rint(1,A-1),a2=A-a1;
-    let right;
-    if(both&&C>=2){
-      const c1=rint(1,C-1),c2=C-c1;
-      right=sideTwo(c1,c2,BR,v,false);
-    }else right=sideSimple(C,BR,v,false);
-    const left=sideTwo(a1,a2,BL,v,false);
-    const html=`${left} = ${right}`;
-    return {variable:v,solution:sol,html,steps:buildSteps(html,A,BL,C,BR,v,false,sol),raw:{A,BL,C,BR,both}};
-  }
+
+function generate(diff=state.difficulty,type=state.type){
+  return type==='coefficient'?coefficientQuestion(diff):fractionQuestion(diff);
 }
-function genChallenge(){
-  const v=pick(['x','y','k']),coeffs=[0.5,1,1.5,2,2.5,3];
-  while(true){
-    const sol=rint(0,20)/2;
-    const a1=pick(coeffs),a2=pick(coeffs),c1=pick(coeffs),c2=pick(coeffs);
-    const A=a1+a2,C=c1+c2;
-    if(A<=C)continue;
-    const BL=rint(-10,10),rawBR=A*sol+BL-C*sol;
-    if(!Number.isFinite(rawBR)||Math.abs(rawBR)>30)continue;
-    const BR10=Math.round(rawBR*10);
-    if(Math.abs(rawBR*10-BR10)>1e-6)continue;
-    const BR=BR10/10;
-    const html=`${sideTwo(a1,a2,BL,v,true)} = ${sideTwo(c1,c2,BR,v,true)}`;
-    return {variable:v,solution:sol,html,steps:buildSteps(html,A,BL,C,BR,v,true,sol),raw:{A,BL,C,BR}};
-  }
-}
-function generate(diff=state.difficulty){return diff==='foundation'?genFoundation():diff==='core'?genCore():genChallenge()}
 function stepsHTML(q){return q.steps.map(x=>`<div>${x}</div>`).join('')}
 
 function newQuestion(){
   state.current=generate();state.evaluated=false;
-  $('#equation').textContent=state.current.html;
+  $('#equation').innerHTML=state.current.html;
   $('#answerLabel').textContent=`Solve for ${state.current.variable}:`;
   $('#answer').value='';$('#answer').disabled=false;$('#check').disabled=false;$('#next').hidden=true;
   $('#feedback').textContent='';$('#feedback').className='feedback';
@@ -211,14 +277,14 @@ function newQuestion(){
 }
 function checkAnswer(){
   if(state.evaluated)return;
-  const val=strictNumber($('#answer').value);
-  if(val===null){
+  const v=strictNumber($('#answer').value);
+  if(v===null){
     $('#feedback').textContent='Enter a valid number first.';
     $('#feedback').className='feedback incorrect';return;
   }
   state.evaluated=true;
   $('#answer').disabled=true;$('#check').disabled=true;$('#next').hidden=false;
-  if(Math.abs(val-state.current.solution)<1e-9){
+  if(Math.abs(v-state.current.solution)<1e-9){
     state.correct++;$('#feedback').textContent='Correct!';$('#feedback').className='feedback correct';
   }else{
     state.incorrect++;$('#feedback').textContent=`Incorrect. Correct answer: ${formatNumber(state.current.solution,true)}`;
@@ -240,13 +306,24 @@ $('#difficulty').addEventListener('click',e=>{
   $$('#difficulty button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   if(state.mode==='practice')newQuestion();
 });
-$('#contrastBtn').addEventListener('click',()=>{const on=document.body.classList.toggle('high-contrast');$('#contrastBtn').setAttribute('aria-pressed',String(on))});
+$('#eqtype').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-type]');if(!b)return;
+  state.type=b.dataset.type;
+  $$('#eqtype button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  if(state.mode==='practice')newQuestion();
+});
+$('#contrastBtn').addEventListener('click',()=>{
+  const on=document.body.classList.toggle('high-contrast');
+  $('#contrastBtn').setAttribute('aria-pressed',String(on));
+});
 
 function setMode(mode){
-  state.mode=mode;const p=mode==='practice';
-  $('#practice').style.display=p?'grid':'none';$('#worksheet').style.display=p?'none':'block';
-  $('#practiceBtn').setAttribute('aria-pressed',String(p));$('#worksheetBtn').setAttribute('aria-pressed',String(!p));
-  if(p)newQuestion();else if(!$('#wsList').children.length)renderWorksheet();
+  state.mode=mode;const practice=mode==='practice';
+  $('#practice').style.display=practice?'grid':'none';
+  $('#worksheet').style.display=practice?'none':'block';
+  $('#practiceBtn').setAttribute('aria-pressed',String(practice));
+  $('#worksheetBtn').setAttribute('aria-pressed',String(!practice));
+  if(practice)newQuestion();else if(!$('#wsList').children.length)renderWorksheet();
 }
 $('#practiceBtn').addEventListener('click',()=>setMode('practice'));
 $('#worksheetBtn').addEventListener('click',()=>setMode('worksheet'));
@@ -276,19 +353,16 @@ function runDevTests(){
   assert('comma',strictNumber('2,5')===2.5);
   assert('junk rejected',strictNumber('12abc')===null);
   assert('blank rejected',strictNumber('')===null);
+
   for(let i=0;i<20000;i++){
     for(const d of ['foundation','core','challenge']){
-      const q=generate(d);
-      assert(d+' finite',Number.isFinite(q.solution));
-      if(d!=='challenge')assert(d+' integer solution',Number.isInteger(q.solution));
-      if(d==='challenge')assert('challenge half-step',Math.abs(q.solution*2-Math.round(q.solution*2))<1e-9);
-      if(d==='foundation'){
-        const r=q.raw;
-        assert('foundation positive constants',r.b>0&&r.d>0);
-        assert('foundation A>C',r.a>r.c);
+      for(const t of ['coefficient','fraction']){
+        const q=generate(d,t);
+        assert(d+' '+t+' finite',Number.isFinite(q.solution));
+        if(d!=='challenge')assert(d+' integer solution',Number.isInteger(q.solution));
+        if(d==='challenge')assert(d+' one-decimal solution',isOneDecimalExact(q.solution));
+        if(t==='fraction')assert('fraction markup',q.html.includes('fraction'));
       }
-      if(d==='core')assert('core A>C',q.raw.A>q.raw.C);
-      if(d==='challenge')assert('challenge A>C',q.raw.A>q.raw.C);
     }
   }
   console.log(fails.length?'DEV TESTS: FAIL':'DEV TESTS: PASS',fails);
